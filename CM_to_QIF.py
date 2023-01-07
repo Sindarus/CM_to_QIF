@@ -23,12 +23,12 @@ def parse_transaction_tr(tr: bs4.element.Tag) -> Transaction:
 
     further_infos_container = tds[1].find_all("div", recursive=False)[-1].div
     further_infos = further_infos_container.find_all("div")  # type: list[bs4.element.Tag]
-    payment_info = list(further_infos[0].stripped_strings)[0]
+    payment_info = list(further_infos[0].stripped_strings)[-1]
     transaction_label = list(further_infos[1].stripped_strings)[0]
     if "Date de valeur" in transaction_label:
         transaction_label = None
 
-    raw_amount = tds[2].text.replace(" ", "").replace("EUR", "")
+    raw_amount = tds[2].text.replace(" ", "").replace(" ", "").replace("EUR", "")
     symbol = raw_amount[0]
     int_part = raw_amount[1:].split(",")[0]
     decimal_part = raw_amount[1:].split(",")[1]
