@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import bs4.element
 from bs4 import BeautifulSoup
+from typing import List
 
 
 @dataclass
@@ -39,6 +40,7 @@ def parse_transaction_tr(tr: bs4.element.Tag) -> Transaction:
         date=transaction_date
     )
 
+
 def find_transactions_tbody(soup: bs4.element.Tag) -> bs4.element.Tag:
     tables = soup.find(id="ei_tpl_content").find_all("table")
     for table in tables:
@@ -48,8 +50,23 @@ def find_transactions_tbody(soup: bs4.element.Tag) -> bs4.element.Tag:
                 return tbodies[i+1]
 
 
+def write_transactions_as_QIF(out_file_path: str, transactions: List[Transaction]):
+    with open(out_file_path, "w") as file:
+        file.write("!Type:Bank\n")
+        for t in transactions:
+            qif_transaction = f"D{t.date}\n"
+            qif_transaction += f"T{t.symbol}{t.int_part}.{t.decimal_part}\n"
+            if t.transaction_label is not None:
+                qif_transaction += f"P{t.transaction_label} {t.payment_info}\n"
+            else:
+                qif_transaction += f"P{t.payment_info}\n"
+            qif_transaction += "^\n"
+            file.write(qif_transaction)
+
+
 def main():
     transactions = []  # type: list[Transaction]
+
     with open("input.html") as html_file:
         soup = BeautifulSoup(html_file, "html.parser")
         transaction_tbody = find_transactions_tbody(soup=soup)
@@ -63,6 +80,9 @@ def main():
 
             print(i, ": ", transaction.transaction_label, transaction.payment_info)
             transactions.append(transaction)
+        print(f"Found {len(transactions)} transactions")
+
+    write_transactions_as_QIF(out_file_path="out.qif", transactions=transactions)
 
 
 if __name__ == "__main__":
